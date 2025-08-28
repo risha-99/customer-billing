@@ -15,9 +15,20 @@ export const invoiceInputSchema = z.object({
   status: z.enum(["paid", "unpaid"]).default("unpaid"),
 });
 
-export const computeTotals = (items: z.infer<typeof invoiceItemSchema>[]) => {
-  const subtotal = items.reduce((s, it) => s + it.quantity * it.price, 0);
-  const taxTotal = items.reduce((s, it) => s + (it.quantity * it.price * (it.taxRate || 0)) / 100, 0);
+export const computeTotals = (items: any[]) => {
+  const subtotal = items.reduce((s, it) => {
+    const qty = Number(it.quantity) || 0;
+    const price = Number(it.price) || 0;
+    return s + (qty * price);
+  }, 0);
+  
+  const taxTotal = items.reduce((s, it) => {
+    const qty = Number(it.quantity) || 0;
+    const price = Number(it.price) || 0;
+    const taxRate = Number(it.taxRate) || 0;
+    return s + ((qty * price * taxRate) / 100);
+  }, 0);
+  
   const grandTotal = subtotal + taxTotal;
   return { subtotal, taxTotal, grandTotal };
 };

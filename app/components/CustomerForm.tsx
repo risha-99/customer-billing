@@ -66,105 +66,259 @@ export function CustomerForm({ onCreated }: { onCreated?: () => void }) {
   const prev = () => setStep((s) => (Math.max(0, s - 1) as Step));
 
   const onSubmit = async (data: CustomerFormInput) => {
-    const output = customerFormSchema.parse(data);
-    await customerRepository.add(output);
-    methods.reset();
-    setStep(0);
-    onCreated?.();
+    try {
+      const output = await customerFormSchema.parseAsync(data);
+      await customerRepository.add(output);
+      methods.reset();
+      setStep(0);
+      onCreated?.();
+    } catch (error) {
+      console.error('Form validation error:', error);
+      // The form validation errors will be handled by React Hook Form
+    }
   };
 
   return (
-    <div className="w-full max-w-3xl m-auto border border-gray-300 rounded-md p-4">
+    <div className="bg-white rounded-lg shadow-sm border">
       <FormProvider {...methods}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <h2 className="text-xl font-semibold">Create New Customer</h2>
-
-          {/* Steps */}
-          <ol className="flex items-center gap-2 text-sm">
-            {[
-              { id: 0, label: "Personal" },
-              { id: 1, label: "Addresses" },
-              { id: 2, label: "Review" },
-            ].map((s) => (
-              <li key={s.id} className={`px-3 py-1 rounded-full border ${step === s.id ? "bg-blue-600 text-white border-blue-600" : "border-gray-300"}`}>
-                {s.label}
-              </li>
-            ))}
-          </ol>
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8">
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Customer</h2>
+            
+            {/* Steps */}
+            <div className="flex items-center gap-4">
+              {[
+                { id: 0, label: "Personal Information", icon: "👤" },
+                { id: 1, label: "Address Details", icon: "📍" },
+                { id: 2, label: "Review & Submit", icon: "✓" },
+              ].map((s) => (
+                <div key={s.id} className={`flex items-center px-4 py-2 rounded-lg border transition-colors ${
+                  step === s.id 
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                    : step > s.id
+                    ? "bg-green-100 text-green-700 border-green-200"
+                    : "bg-gray-50 text-gray-600 border-gray-200"
+                }`}>
+                  <span className="mr-2">{s.icon}</span>
+                  <span className="font-medium text-sm">{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {step === 0 && (
-            <section className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium">Name *</label>
-                <input className="mt-1 w-full rounded-md border px-3 py-2" {...register("personal.name")} />
-                {errors?.personal?.name && <p className="text-red-600 text-sm">{String(errors.personal.name.message)}</p>}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium">Email</label>
-                  <input className="mt-1 w-full rounded-md border px-3 py-2" type="email" {...register("personal.email")} />
-                  {errors?.personal?.email && <p className="text-red-600 text-sm">{String(errors.personal.email.message)}</p>}
+            <section className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                Personal Information
+              </h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Full Name *</label>
+                  <input 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    placeholder="Enter customer's full name"
+                    {...register("personal.name")} 
+                  />
+                  {errors?.personal?.name && <p className="text-red-600 text-sm flex items-center mt-1">
+                    <span className="mr-1">⚠️</span>{String(errors.personal.name.message)}
+                  </p>}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium">Phone</label>
-                  <input className="mt-1 w-full rounded-md border px-3 py-2" placeholder="+1 555 123 4567" {...register("personal.phone")} />
-                  {errors?.personal?.phone && <p className="text-red-600 text-sm">{String(errors.personal.phone.message)}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input 
+                      className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      type="email" 
+                      placeholder="customer@example.com"
+                      {...register("personal.email")} 
+                    />
+                    {errors?.personal?.email && <p className="text-red-600 text-sm flex items-center mt-1">
+                      <span className="mr-1">⚠️</span>{String(errors.personal.email.message)}
+                    </p>}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input 
+                      className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      placeholder="+1 (555) 123-4567" 
+                      {...register("personal.phone")} 
+                    />
+                    {errors?.personal?.phone && <p className="text-red-600 text-sm flex items-center mt-1">
+                      <span className="mr-1">⚠️</span>{String(errors.personal.phone.message)}
+                    </p>}
+                  </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-700 flex items-center">
+                    <span className="mr-2">💡</span>
+                    Provide either email or phone number. Email addresses are checked for duplicates automatically.
+                  </p>
                 </div>
               </div>
-              <p className="text-xs text-gray-500">Provide either email or phone. Email is checked asynchronously for duplicates.</p>
             </section>
           )}
 
           {step === 1 && (
-            <section className="space-y-6">
-              <fieldset className="space-y-3">
-                <legend className="font-medium">Billing Address</legend>
+            <section className="space-y-8">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="w-2 h-2 bg-green-600 rounded-full mr-3"></span>
+                Address Information
+              </h3>
+              
+              {/* Billing Address */}
+              <div className="bg-gray-50 rounded-lg p-6 border">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">🏢</span>
+                  Billing Address
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="Line 1" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.line1")} />
-                  <input placeholder="Line 2" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.line2")} />
-                  <input placeholder="City" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.city")} />
-                  <input placeholder="State" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.state")} />
-                  <input placeholder="Postal Code" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.postalCode")} />
-                  <input placeholder="Country" className="rounded-md border px-3 py-2" {...register("addressInfo.billingAddress.country")} />
+                  <input 
+                    placeholder="Address Line 1" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.line1")} 
+                  />
+                  <input 
+                    placeholder="Address Line 2 (Optional)" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.line2")} 
+                  />
+                  <input 
+                    placeholder="City" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.city")} 
+                  />
+                  <input 
+                    placeholder="State/Province" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.state")} 
+                  />
+                  <input 
+                    placeholder="Postal/Zip Code" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.postalCode")} 
+                  />
+                  <input 
+                    placeholder="Country" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.billingAddress.country")} 
+                  />
                 </div>
-              </fieldset>
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" {...register("addressInfo.copyBillingToShipping", { value: false })} />
-                <span className="text-sm">Shipping same as billing</span>
-              </label>
-              <fieldset className="space-y-3">
-                <legend className="font-medium">Shipping Address</legend>
+              </div>
+
+              {/* Copy Address Toggle */}
+              <div className="flex items-center">
+                <label className="inline-flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                    {...register("addressInfo.copyBillingToShipping", { value: false })} 
+                  />
+                  <span className="text-sm font-medium text-gray-700">Use billing address for shipping</span>
+                </label>
+              </div>
+
+              {/* Shipping Address */}
+              <div className="bg-gray-50 rounded-lg p-6 border">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">📦</span>
+                  Shipping Address
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="Line 1" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.line1")} />
-                  <input placeholder="Line 2" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.line2")} />
-                  <input placeholder="City" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.city")} />
-                  <input placeholder="State" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.state")} />
-                  <input placeholder="Postal Code" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.postalCode")} />
-                  <input placeholder="Country" className="rounded-md border px-3 py-2" {...register("addressInfo.shippingAddress.country")} />
+                  <input 
+                    placeholder="Address Line 1" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.line1")} 
+                  />
+                  <input 
+                    placeholder="Address Line 2 (Optional)" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.line2")} 
+                  />
+                  <input 
+                    placeholder="City" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.city")} 
+                  />
+                  <input 
+                    placeholder="State/Province" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.state")} 
+                  />
+                  <input 
+                    placeholder="Postal/Zip Code" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.postalCode")} 
+                  />
+                  <input 
+                    placeholder="Country" 
+                    className="w-full rounded-lg border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                    {...register("addressInfo.shippingAddress.country")} 
+                  />
                 </div>
-              </fieldset>
-              {errors?.addressInfo && <p className="text-red-600 text-sm">Please complete address details</p>}
+              </div>
+              {errors?.addressInfo && <p className="text-red-600 text-sm flex items-center">
+                <span className="mr-1">⚠️</span>Please complete address details
+              </p>}
             </section>
           )}
 
           {step === 2 && (
-            <section className="space-y-4">
-              <p className="text-sm text-gray-600">Review details and submit.</p>
-              <pre className="bg-gray-50 border rounded-md p-3 text-xs overflow-auto">{JSON.stringify(methods.getValues(), null, 2)}</pre>
+            <section className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="w-2 h-2 bg-purple-600 rounded-full mr-3"></span>
+                Review & Submit
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-6 border">
+                <p className="text-sm text-gray-600 mb-4 flex items-center">
+                  <span className="mr-2">👀</span>
+                  Please review all information before creating the customer profile.
+                </p>
+                <div className="bg-white rounded-lg p-4 border">
+                  <pre className="text-xs text-gray-700 overflow-auto whitespace-pre-wrap">
+                    {JSON.stringify(methods.getValues(), null, 2)}
+                  </pre>
+                </div>
+              </div>
             </section>
           )}
 
-          <div className="flex justify-between pt-2">
-            <button type="button" onClick={prev} disabled={step === 0} className="rounded-md border px-4 py-2 disabled:opacity-50">
+          <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+            <button 
+              type="button" 
+              onClick={prev} 
+              disabled={step === 0} 
+              className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <span className="mr-2">←</span>
               Back
             </button>
             {step < 2 ? (
-              <button type="button" onClick={next} className="rounded-md bg-blue-600 text-white px-4 py-2">
+              <button 
+                type="button" 
+                onClick={next} 
+                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
+              >
                 Next
+                <span className="ml-2">→</span>
               </button>
             ) : (
-              <button type="submit" disabled={isSubmitting} className="rounded-md bg-green-600 text-white px-4 py-2 disabled:opacity-50">
-                {isSubmitting ? "Saving..." : "Create Customer"}
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors shadow-lg disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">✓</span>
+                    Create Customer
+                  </>
+                )}
               </button>
             )}
           </div>
