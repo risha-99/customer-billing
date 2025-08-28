@@ -4,22 +4,23 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { customerRepository, type Customer } from "../lib/customerRepository";
-import { invoiceRepository } from "../lib/invoiceRepository";
+import { invoiceRepository, type Invoice } from "../lib/invoiceRepository";
 import { invoiceInputSchema, computeTotals } from "../lib/invoiceSchemas";
+import { z } from "zod";
 
-type InvoiceInput = ReturnType<typeof invoiceInputSchema._type>;
+type InvoiceFormData = z.infer<typeof invoiceInputSchema>;
 
 export default function InvoicePage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const form = useForm<any>({
+  const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceInputSchema),
     defaultValues: {
       customerId: "",
       date: new Date().toISOString().slice(0, 10),
       dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-      status: "unpaid",
+      status: "unpaid" as const,
       items: [{ description: "", quantity: 1, price: 0, taxRate: 10 }],
     },
     mode: "onChange",
@@ -42,9 +43,23 @@ export default function InvoicePage() {
     return computeTotals(validItems);
   }, [watchedItems]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: InvoiceFormData) => {
     const { subtotal, taxTotal, grandTotal } = computeTotals(data.items);
-    await invoiceRepository.add({ ...data, subtotal, taxTotal, grandTotal });
+    
+    // Transform form items to invoice items with IDs
+    const itemsWithIds = data.items.map(item => ({
+      ...item,
+      id: crypto.randomUUID()
+    }));
+    
+    await invoiceRepository.add({ 
+      ...data, 
+      items: itemsWithIds,
+      subtotal, 
+      taxTotal, 
+      grandTotal 
+    });
+    
     const selectedCustomerId = data.customerId;
     reset();
     form.setValue("customerId", selectedCustomerId);
@@ -242,7 +257,7 @@ export default function InvoicePage() {
   );
 }
 
-function watchCustomerId(form: any): string | undefined {
+function watchCustomerId(form: ReturnType<typeof useForm<InvoiceFormData>>): string | undefined {
   try {
     return form.watch("customerId");
   } catch {
@@ -251,7 +266,7 @@ function watchCustomerId(form: any): string | undefined {
 }
 
 function InvoicesForCustomer({ customerId }: { customerId?: string }) {
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   
   useEffect(() => {
