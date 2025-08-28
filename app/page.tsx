@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 sm:p-12 space-y-10">
       <CustomerForm onCreated={() => setRefreshKey((k) => k + 1)} />
-      <section className="space-y-3 m-auto w-[1200px]">
+      <section className="space-y-3">
         <h3 className="text-lg font-semibold">Customers</h3>
         <CustomerList refreshKey={refreshKey} />
       </section>

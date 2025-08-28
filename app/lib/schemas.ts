@@ -40,7 +40,7 @@ export const personalInfoSchema = z
 
 export const addressInfoSchema = z.object({
   billingAddress: addressSchema,
-  copyBillingToShipping: z.boolean().default(false),
+  copyBillingToShipping: z.boolean(),
   shippingAddress: addressSchema,
 });
 
@@ -63,5 +63,6 @@ export const customerFormSchema = customerFormInputSchema.transform((data) => {
   });
 
 export type CustomerFormInput = z.infer<typeof customerFormInputSchema>;
+export type CustomerFormOutput = z.output<typeof customerFormSchema>;
 
 

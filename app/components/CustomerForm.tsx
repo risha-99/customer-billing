@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, FormProvider, type SubmitHandler, type Resolver } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { customerFormSchema, customerFormInputSchema, personalInfoSchema, addressInfoSchema } from "../lib/schemas";
+import { customerFormSchema, customerFormInputSchema, type CustomerFormInput, personalInfoSchema, addressInfoSchema } from "../lib/schemas";
 import { customerRepository } from "../lib/customerRepository";
 import { z } from "zod";
 
 type Step = 0 | 1 | 2;
-type CustomerFormValues = z.infer<typeof customerFormInputSchema>;
-type CustomerPayload = z.output<typeof customerFormSchema>;
 
 const personalDefaults: z.infer<typeof personalInfoSchema> = {
   name: "",
@@ -26,8 +24,8 @@ const addressDefaults: z.infer<typeof addressInfoSchema> = {
 export function CustomerForm({ onCreated }: { onCreated?: () => void }) {
   const [step, setStep] = useState<Step>(0);
 
-  const methods = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerFormInputSchema) as unknown as Resolver<CustomerFormValues>,
+  const methods = useForm<CustomerFormInput>({
+    resolver: zodResolver(customerFormInputSchema),
     defaultValues: {
       personal: personalDefaults,
       addressInfo: addressDefaults,
@@ -67,9 +65,9 @@ export function CustomerForm({ onCreated }: { onCreated?: () => void }) {
  
   const prev = () => setStep((s) => (Math.max(0, s - 1) as Step));
 
-  const onSubmit: SubmitHandler<CustomerFormValues> = async (raw) => {
-    const data: CustomerPayload = customerFormSchema.parse(raw);
-    await customerRepository.add(data);
+  const onSubmit = async (data: CustomerFormInput) => {
+    const output = customerFormSchema.parse(data);
+    await customerRepository.add(output);
     methods.reset();
     setStep(0);
     onCreated?.();
@@ -103,7 +101,7 @@ export function CustomerForm({ onCreated }: { onCreated?: () => void }) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium">Email *</label>
+                  <label className="block text-sm font-medium">Email</label>
                   <input className="mt-1 w-full rounded-md border px-3 py-2" type="email" {...register("personal.email")} />
                   {errors?.personal?.email && <p className="text-red-600 text-sm">{String(errors.personal.email.message)}</p>}
                 </div>
@@ -131,7 +129,7 @@ export function CustomerForm({ onCreated }: { onCreated?: () => void }) {
                 </div>
               </fieldset>
               <label className="inline-flex items-center gap-2">
-                <input type="checkbox" {...register("addressInfo.copyBillingToShipping")} />
+                <input type="checkbox" {...register("addressInfo.copyBillingToShipping", { value: false })} />
                 <span className="text-sm">Shipping same as billing</span>
               </label>
               <fieldset className="space-y-3">

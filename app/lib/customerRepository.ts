@@ -41,7 +41,6 @@ export class CustomerRepository {
   }
 
   async getAll(): Promise<Customer[]> {
-    debugger;
     const map = await this.readAllInternal();
     return Object.values(map).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }
